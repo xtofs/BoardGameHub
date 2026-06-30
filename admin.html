@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Board Game Hub - Admin</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+</head>
+
+<body>
+    <main class="admin-page">
+        <header class="admin-header">
+            <h1>Room Admin</h1>
+            <a class="back-link" href="./index.html">Back to lobby</a>
+        </header>
+
+        <p class="subtitle">
+            Hidden utility page. Lists rooms and allows deletion.
+        </p>
+
+        <div id="admin-notice" class="notice">Loading rooms...</div>
+        <ul id="room-list" class="room-list"></ul>
+    </main>
+
+    <script type="module" src="/src/admin/main.ts"></script>
+</body>
+
+</html>

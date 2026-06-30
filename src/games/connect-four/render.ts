@@ -15,7 +15,12 @@ function metrics(view: View) {
   return { cellSize, boardW, boardH, offsetX, offsetY };
 }
 
-export function render(ctx: CanvasRenderingContext2D, state: C4State, view: View): void {
+export function render(
+  ctx: CanvasRenderingContext2D,
+  state: C4State,
+  view: View,
+  _seat: 0 | 1 | null,
+): void {
   ctx.clearRect(0, 0, view.width, view.height);
   const { cellSize, boardW, boardH, offsetX, offsetY } = metrics(view);
 

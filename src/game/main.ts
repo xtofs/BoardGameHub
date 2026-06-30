@@ -59,7 +59,11 @@ function describe(g: Game, r: Room, seat: Seat | null): string {
 
 function paint(): void {
   if (!latest) return;
-  game!.render(ctx, latest.state, view);
+  if (latest.game !== game!.id) {
+    noticeEl.textContent = `This room is running "${latest.game}", not "${game!.id}".`;
+    return;
+  }
+  game!.render(ctx, latest.state, view, mySeat);
   noticeEl.textContent = describe(game!, latest, mySeat);
 }
 
@@ -82,6 +86,11 @@ async function start(): Promise<void> {
   const { seat } = await joinRoom(room, game!, player);
   mySeat = seat;
   subscribeRoom(room, (r) => {
+    if (r && r.game !== game!.id) {
+      latest = null;
+      noticeEl.textContent = `Room "${room}" is for "${r.game}". Open the matching game or use a new room name.`;
+      return;
+    }
     latest = r;
     paint();
   });

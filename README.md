@@ -28,8 +28,8 @@ npm run build    # static output in dist/ (deployable to GitHub Pages)
    **GitHub Actions**.
 2. Push to `main`; the workflow in [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)
    builds `dist/` and deploys it as the Pages site.
-3. Because the Vite config uses the repository base path, the build is emitted
-   for `https://<user>.github.io/BoardGameHub/`.
+3. Because the Vite config uses the repository base path, the published site is
+   `https://xtofs.github.io/BoardGameHub/`.
 
 Open the dev URL in two browsers (or one normal + one incognito), pick the same
 game and room name, and play.
