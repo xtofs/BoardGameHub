@@ -5,8 +5,8 @@ import { resolve } from "node:path";
 // are both static entry points. Add future standalone pages here.
 export default defineConfig({
   // Relative base so the built site works under a GitHub Pages subpath
-  // (e.g. https://user.github.io/BoardGameHub/).
-  base: "./",
+  // (e.g. https://user.github.io/BoardGameHub/).// GitHub Pages project site base path.
+  base: "/BoardGameHub/",
   build: {
     rollupOptions: {
       input: {

@@ -1,24 +1,27 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Board Game Hub — Game</title>
-    <link rel="stylesheet" href="/src/styles.css" />
-  </head>
-  <body>
-    <main class="game-page">
-      <header class="game-header">
-        <a class="back-link" href="/index.html">&larr; Lobby</a>
-        <h1 id="game-title">Game</h1>
-        <span id="room-label" class="room-label"></span>
-      </header>
 
-      <div id="notice" class="notice">Connecting…</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Board Game Hub — Game</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
 
-      <canvas id="board" class="board" width="560" height="480"></canvas>
-    </main>
+<body>
+  <main class="game-page">
+    <header class="game-header">
+      <a class="back-link" href="./index.html">&larr; Lobby</a>
+      <h1 id="game-title">Game</h1>
+      <span id="room-label" class="room-label"></span>
+    </header>
 
-    <script type="module" src="/src/game/main.ts"></script>
-  </body>
+    <div id="notice" class="notice">Connecting…</div>
+
+    <canvas id="board" class="board" width="560" height="480"></canvas>
+  </main>
+
+  <script type="module" src="/src/game/main.ts"></script>
+</body>
+
 </html>

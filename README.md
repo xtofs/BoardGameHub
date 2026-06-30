@@ -22,6 +22,15 @@ npm run dev      # http://localhost:5173
 npm run build    # static output in dist/ (deployable to GitHub Pages)
 ```
 
+## GitHub Pages
+
+1. In the repository settings, set **Pages -> Build and deployment -> Source** to
+   **GitHub Actions**.
+2. Push to `main`; the workflow in [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)
+   builds `dist/` and deploys it as the Pages site.
+3. Because the Vite config uses the repository base path, the build is emitted
+   for `https://<user>.github.io/BoardGameHub/`.
+
 Open the dev URL in two browsers (or one normal + one incognito), pick the same
 game and room name, and play.
 
@@ -34,7 +43,7 @@ project:
 
 1. Create a project at <https://console.firebase.google.com>.
 2. **Build → Realtime Database → Create database** (pick a region; start in
-   *test mode*).
+   _test mode_).
 3. **Project settings (gear) → General → Your apps → add a Web app**, then copy
    the generated `firebaseConfig` values into `src/firebase/config.ts`.
 4. Set Database **rules**. Permissive dev rules (open — fine for a hobby hub,
