@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Board Game Hub</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main class="lobby">
+      <h1>Board Game Hub</h1>
+      <p class="subtitle">Pick a game, share a room name, and play head-to-head.</p>
+
+      <section>
+        <h2>Choose a game</h2>
+        <ul id="game-list" class="game-list"></ul>
+      </section>
+
+      <form id="join-form" class="join-form">
+        <label>
+          Room name
+          <input id="room" name="room" type="text" autocomplete="off" required />
+        </label>
+        <label>
+          Your name
+          <input id="player" name="player" type="text" autocomplete="off" required />
+        </label>
+        <button type="submit">Play</button>
+      </form>
+    </main>
+
+    <script type="module" src="/src/lobby/main.ts"></script>
+  </body>
+</html>
