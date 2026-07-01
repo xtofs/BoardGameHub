@@ -11,6 +11,10 @@ export interface Room {
   status: "in_progress" | "win" | "draw";
   winner?: Seat;
   seats: { 0?: string; 1?: string };
+  createdAt?: number;
+  updatedAt?: number;
+  lastMoveAt?: number;
+  moveCount?: number;
 }
 
 function roomRef(room: string) {
@@ -39,14 +43,21 @@ export async function joinRoom(
   let seat: Seat | null = null;
 
   await runTransaction(roomRef(room), (current: Room | null) => {
+    const now = Date.now();
     const next: Room =
       current ?? {
         game: game.id,
         state: game.createInitialState(),
         status: "in_progress",
         seats: {},
+        createdAt: now,
+        updatedAt: now,
+        moveCount: 0,
       };
     next.seats = next.seats ?? {};
+    next.createdAt = next.createdAt ?? now;
+    next.updatedAt = now;
+    next.moveCount = typeof next.moveCount === "number" ? next.moveCount : 0;
 
     if (next.seats[0] === player) seat = 0;
     else if (next.seats[1] === player) seat = 1;
@@ -89,9 +100,18 @@ export async function submitMove(
     }
 
     const nextState = game.applyMove(current.state, move, seat);
+    const changed = JSON.stringify(nextState) !== JSON.stringify(current.state);
+    if (!changed) {
+      return current;
+    }
+
+    const now = Date.now();
     return {
       ...current,
       state: nextState,
+      updatedAt: now,
+      lastMoveAt: now,
+      moveCount: (typeof current.moveCount === "number" ? current.moveCount : 0) + 1,
       ...statusFields(game, nextState),
     };
   });
