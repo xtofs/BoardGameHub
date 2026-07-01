@@ -26,8 +26,9 @@ export interface Game<S = unknown, M = unknown> {
 
   createInitialState(): S;
 
-  // Draw the current state. Must not mutate `state`.
-  render(ctx: CanvasRenderingContext2D, state: S, view: View): void;
+  // Draw the current state from the perspective of `seat`.
+  // `seat` is null for spectators.
+  render(ctx: CanvasRenderingContext2D, state: S, view: View, seat: Seat | null): void;
 
   // Translate a canvas click into a move, or null if the click is not a legal
   // move for `seat` given `state`.

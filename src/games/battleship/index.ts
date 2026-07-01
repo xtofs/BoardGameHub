@@ -4,21 +4,21 @@ import {
   applyMove,
   getStatus,
   isLegal,
-  type C4State,
-  type C4Move,
+  type BsgState,
+  type BsgMove,
 } from "./logic";
 import { render, hitTest } from "./render";
 
 // Assemble the components into a Game the shared machinery can drive.
-export const connectFour: Game<C4State, C4Move> = {
-  id: "connect-four",
-  name: "Connect Four",
+export const battleshipGame: Game<BsgState, BsgMove> = {
+  id: "battleship",
+  name: "Battleship",
   createInitialState,
   render,
-  hitTest(state, x, y, view) {
-    const col = hitTest(x, y, view);
-    if (col === null || !isLegal(state, col)) return null;
-    return col;
+  hitTest(state, x, y, view, seat) {
+    const move = hitTest(x, y, view, seat);
+    if (move === null || !isLegal(state, move, seat)) return null;
+    return move;
   },
   applyMove,
   getStatus,
