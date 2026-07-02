@@ -2,6 +2,7 @@ import "../styles.css";
 import { onValue, ref, remove } from "firebase/database";
 import { db, isFirebaseConfigured } from "../firebase/app";
 import { getGame } from "../games/registry";
+import type { Seat } from "../games/types";
 
 type SeatMap = { 0?: string; 1?: string };
 type PersistedStatus = "in_progress" | "win" | "draw";
@@ -60,22 +61,36 @@ function formatStatus(status: PersistedStatus | undefined): string {
 function moveSummary(room: RoomRow): string {
     const game = getGame(room.game ?? null);
     if (game) {
-        return game.moveSummary(room.state);
+        const summary = game.getGameSummary(room.state);
+        const total = typeof summary.movesTotal === "number" ? `/${summary.movesTotal}` : "";
+        const base = `moves: ${summary.movesMade}${total}`;
+        return summary.gameProgress ? `${base} | ${summary.gameProgress}` : base;
     }
 
     const moveCount = typeof room.moveCount === "number" ? room.moveCount : 0;
     return `moves: ${moveCount}`;
 }
 
+function seatLabel(room: RoomRow, seat: Seat): string {
+    return room.seats?.[seat] ?? (seat === 0 ? "first" : "second");
+}
+
 function statusSummary(room: RoomRow): string {
     const game = getGame(room.game ?? null);
     if (game) {
-        return game.statusSummary(room.state);
+        const status = game.getStatus(room.state);
+        if (status.kind === "in_progress") {
+            return `In progress (turn: ${seatLabel(room, status.turn)})`;
+        }
+        if (status.kind === "draw") {
+            return "Draw";
+        }
+        return `Finished (winner: ${seatLabel(room, status.winner)})`;
     }
 
     const fallbackStatus = formatStatus(room.status);
     if (room.status === "win" && typeof room.winner === "number") {
-        return `${fallbackStatus} (winner: ${room.winner === 0 ? "first" : "second"})`;
+        return `${fallbackStatus} (winner: ${seatLabel(room, room.winner as Seat)})`;
     }
     return fallbackStatus;
 }

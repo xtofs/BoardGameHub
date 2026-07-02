@@ -12,6 +12,14 @@ export type GameStatus =
   | { kind: "win"; winner: Seat }
   | { kind: "draw" };
 
+export interface GameSummary {
+  movesMade: number;
+  movesTotal?: number;
+  // Optional, game-owned text for game-specific counters.
+  // Examples: "discs: 12/42", "shots fired: 37", "pegs: 20/54".
+  gameProgress?: string;
+}
+
 // A self-contained game definition. The shared lobby/room/sync machinery is
 // generic over the state type `S` and move type `M`, so adding a game means
 // implementing this interface and registering it — nothing else changes.
@@ -39,7 +47,6 @@ export interface Game<S = unknown, M = unknown> {
 
   getStatus(state: S): GameStatus;
 
-  // Human-readable game-specific summaries for admin views.
-  moveSummary(state: S): string;
-  statusSummary(state: S): string;
+  // Structured summary for admin views (admin renders final text).
+  getGameSummary(state: S): GameSummary;
 }

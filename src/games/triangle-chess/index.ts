@@ -10,21 +10,15 @@ import {
 } from "./logic";
 import { render, hitTest } from "./render";
 
-function moveSummary(state: TriangleChessState): string {
+function getGameSummary(state: TriangleChessState) {
     const normalized = normalizeState(state);
     const moves = normalized.bands.length;
-    return `moves: ${moves} | pegs: ${normalized.pegs.length}/${getBoardCapacity()}`;
-}
-
-function statusSummary(state: TriangleChessState): string {
-    const status = getStatus(state);
-    if (status.kind === "in_progress") {
-        return `In progress (turn: ${status.turn === 0 ? "first" : "second"})`;
-    }
-    if (status.kind === "draw") {
-        return "Draw";
-    }
-    return `Finished (winner: ${status.winner === 0 ? "first" : "second"})`;
+    const pegs = normalized.pegs.length;
+    const capacity = getBoardCapacity();
+    return {
+        movesMade: moves,
+        gameProgress: `pegs: ${pegs}/${capacity}`,
+    };
 }
 
 export const triangleChessGame: Game<TriangleChessState, TriangleMove> = {
@@ -38,6 +32,5 @@ export const triangleChessGame: Game<TriangleChessState, TriangleMove> = {
     },
     applyMove,
     getStatus,
-    moveSummary,
-    statusSummary,
+    getGameSummary,
 };
