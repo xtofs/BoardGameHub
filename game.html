@@ -18,7 +18,13 @@
 
     <div id="notice" class="notice">Connecting…</div>
 
-    <canvas id="board" class="board" width="560" height="480"></canvas>
+    <canvas id="board" class="board" width="800" height="480"></canvas>
+
+    <div id="setup-controls" class="setup-controls" hidden>
+      <button id="setup-rotate" type="button" class="setup-button" hidden>Rotate</button>
+      <button id="setup-reset" type="button" class="setup-button" hidden>Reset</button>
+      <button id="setup-ready" type="button" class="setup-button">Ready</button>
+    </div>
   </main>
 
   <script type="module" src="/src/game/main.ts"></script>
