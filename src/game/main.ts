@@ -29,11 +29,55 @@ if (!isFirebaseConfigured()) {
 }
 
 titleEl.textContent = game.name;
-roomLabel.textContent = `Room: ${room} · You: ${player}`;
+roomLabel.textContent = `Room: ${room}`;
 
 const view: View = { width: canvas.width, height: canvas.height };
 let mySeat: Seat | null = null;
 let latest: Room | null = null;
+let notificationPermissionRequested = false;
+
+function supportsNotifications(): boolean {
+  return typeof window !== "undefined" && "Notification" in window;
+}
+
+async function ensureNotificationPermissionFromGesture(): Promise<void> {
+  if (!supportsNotifications()) return;
+  if (Notification.permission !== "default") return;
+  if (notificationPermissionRequested) return;
+  notificationPermissionRequested = true;
+  try {
+    await Notification.requestPermission();
+  } catch {
+    // Ignore permission API failures; gameplay should continue normally.
+  }
+}
+
+function maybeNotifyOpponentMove(previous: Room | null, next: Room): void {
+  if (mySeat === null) return;
+  if (!supportsNotifications() || Notification.permission !== "granted") return;
+
+  // Avoid in-page duplicates when the player is actively looking at the board.
+  if (document.visibilityState === "visible" && document.hasFocus()) return;
+
+  const previousMoves = typeof previous?.moveCount === "number" ? previous.moveCount : 0;
+  const nextMoves = typeof next.moveCount === "number" ? next.moveCount : 0;
+  if (nextMoves <= previousMoves) return;
+
+  const previousStatus = previous ? game!.getStatus(previous.state) : null;
+  if (!previousStatus || previousStatus.kind !== "in_progress") return;
+  if (previousStatus.turn === mySeat) return;
+
+  const status = game!.getStatus(next.state);
+  const opponent = opponentName(game!, next, mySeat);
+  const body = status.kind === "in_progress" && status.turn === mySeat
+    ? "Your turn now."
+    : "The game was updated.";
+
+  new Notification(`${opponent} made a move`, {
+    body,
+    tag: `room-${room}`,
+  });
+}
 
 function opponentName(g: Game, r: Room, seat: Seat): string {
   void g;
@@ -68,6 +112,8 @@ function paint(): void {
 }
 
 canvas.addEventListener("click", (e) => {
+  void ensureNotificationPermissionFromGesture();
+
   if (!latest || mySeat === null) return;
   const status = game!.getStatus(latest.state);
   if (status.kind !== "in_progress" || status.turn !== mySeat) return;
@@ -85,12 +131,22 @@ canvas.addEventListener("click", (e) => {
 async function start(): Promise<void> {
   const { seat } = await joinRoom(room, game!, player);
   mySeat = seat;
+
+  if (seat !== null) {
+    void ensureNotificationPermissionFromGesture();
+  }
+
   subscribeRoom(room, (r) => {
     if (r && r.game !== game!.id) {
       latest = null;
       noticeEl.textContent = `Room "${room}" is for "${r.game}". Open the matching game or use a new room name.`;
       return;
     }
+
+    if (r) {
+      maybeNotifyOpponentMove(latest, r);
+    }
+
     latest = r;
     paint();
   });

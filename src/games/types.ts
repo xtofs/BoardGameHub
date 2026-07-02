@@ -38,4 +38,8 @@ export interface Game<S = unknown, M = unknown> {
   applyMove(state: S, move: M, seat: Seat): S;
 
   getStatus(state: S): GameStatus;
+
+  // Human-readable game-specific summaries for admin views.
+  moveSummary(state: S): string;
+  statusSummary(state: S): string;
 }

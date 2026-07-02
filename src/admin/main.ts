@@ -1,14 +1,15 @@
 import "../styles.css";
 import { onValue, ref, remove } from "firebase/database";
 import { db, isFirebaseConfigured } from "../firebase/app";
-import { getBoardCapacity as getTriangleBoardCapacity } from "../games/triangle-chess/logic";
+import { getGame } from "../games/registry";
 
 type SeatMap = { 0?: string; 1?: string };
+type PersistedStatus = "in_progress" | "win" | "draw";
 
 type RoomRow = {
     game?: string;
     state?: unknown;
-    status?: string;
+    status?: PersistedStatus;
     winner?: number;
     seats?: SeatMap;
     moveCount?: number;
@@ -32,36 +33,51 @@ function roomTitle(name: string, room: RoomRow): string {
     return `${name} (${game})`;
 }
 
-function roomMeta(room: RoomRow): string {
+function roomStatusMeta(room: RoomRow): string {
+    const status = statusSummary(room);
+    return `status: ${status}`;
+}
+
+function roomSeatsMeta(room: RoomRow): string {
     const s0 = room.seats?.[0] ?? "-";
     const s1 = room.seats?.[1] ?? "-";
-    const winner = typeof room.winner === "number" ? `, winner: ${room.winner}` : "";
-    return `status: ${room.status ?? "unknown"}${winner} | seats: [0] ${s0}, [1] ${s1}`;
+    return `seats: first ${s0}, second ${s1}`;
+}
+
+function formatStatus(status: PersistedStatus | undefined): string {
+    if (status === "in_progress") {
+        return "In progress";
+    }
+    if (status === "win") {
+        return "Finished";
+    }
+    if (status === "draw") {
+        return "Draw";
+    }
+    return "Unknown";
 }
 
 function moveSummary(room: RoomRow): string {
+    const game = getGame(room.game ?? null);
+    if (game) {
+        return game.moveSummary(room.state);
+    }
+
     const moveCount = typeof room.moveCount === "number" ? room.moveCount : 0;
-
-    if (room.game === "triangle-chess") {
-        const pegs = Array.isArray((room.state as { pegs?: unknown[] } | undefined)?.pegs)
-            ? (room.state as { pegs?: unknown[] }).pegs!.length
-            : 0;
-        const total = getTriangleBoardCapacity();
-        return `moves: ${moveCount} | pegs: ${pegs}/${total}`;
-    }
-
-    if (room.game === "connect-four") {
-        const board = Array.isArray((room.state as { board?: unknown[] } | undefined)?.board)
-            ? (room.state as { board?: unknown[] }).board!
-            : [];
-        const discs = board.reduce<number>(
-            (sum, value) => (typeof value === "number" && value !== 0 ? sum + 1 : sum),
-            0,
-        );
-        return `moves: ${moveCount} | discs: ${discs}/42`;
-    }
-
     return `moves: ${moveCount}`;
+}
+
+function statusSummary(room: RoomRow): string {
+    const game = getGame(room.game ?? null);
+    if (game) {
+        return game.statusSummary(room.state);
+    }
+
+    const fallbackStatus = formatStatus(room.status);
+    if (room.status === "win" && typeof room.winner === "number") {
+        return `${fallbackStatus} (winner: ${room.winner === 0 ? "first" : "second"})`;
+    }
+    return fallbackStatus;
 }
 
 function formatAge(ms: number): string {
@@ -133,9 +149,13 @@ function renderRooms(rows: Array<[string, RoomRow]>): void {
         title.className = "room-title";
         title.textContent = roomTitle(name, room);
 
-        const meta = document.createElement("p");
-        meta.className = "room-meta";
-        meta.textContent = roomMeta(room);
+        const statusMeta = document.createElement("p");
+        statusMeta.className = "room-meta";
+        statusMeta.textContent = roomStatusMeta(room);
+
+        const seatsMeta = document.createElement("p");
+        seatsMeta.className = "room-meta";
+        seatsMeta.textContent = roomSeatsMeta(room);
 
         const progress = document.createElement("p");
         progress.className = "room-meta";
@@ -162,7 +182,8 @@ function renderRooms(rows: Array<[string, RoomRow]>): void {
 
         actions.appendChild(deleteBtn);
         item.appendChild(title);
-        item.appendChild(meta);
+        item.appendChild(statusMeta);
+        item.appendChild(seatsMeta);
         item.appendChild(progress);
         item.appendChild(activity);
         item.appendChild(actions);
