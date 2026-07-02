@@ -78,8 +78,18 @@ export async function joinRoom(
 }
 
 // Subscribe to live room updates. Returns an unsubscribe function.
-export function subscribeRoom(room: string, cb: (room: Room | null) => void): Unsubscribe {
-  return onValue(roomRef(room), (snap) => cb(snap.val() as Room | null));
+export function subscribeRoom(
+  room: string,
+  cb: (room: Room | null) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe {
+  return onValue(
+    roomRef(room),
+    (snap) => cb(snap.val() as Room | null),
+    (error) => {
+      onError?.(error as Error);
+    },
+  );
 }
 
 // Attempt a move inside a transaction. The reducer re-reads the latest state,
@@ -112,6 +122,38 @@ export async function submitMove(
       updatedAt: now,
       lastMoveAt: now,
       moveCount: (typeof current.moveCount === "number" ? current.moveCount : 0) + 1,
+      ...statusFields(game, nextState),
+    };
+  });
+}
+
+// Commit pregame setup data for games that support setup phases.
+export async function submitSetup<P>(
+  room: string,
+  game: Game<unknown, unknown, P>,
+  seat: Seat,
+  setupPayload: P,
+): Promise<void> {
+  await runTransaction(roomRef(room), (current: Room | null) => {
+    if (!current) return current;
+    if (current.status !== "in_progress") return current;
+    if (!game.commitSetup) return current;
+
+    const nextState = game.commitSetup(current.state, seat, setupPayload);
+    if (nextState === null) {
+      return current;
+    }
+
+    const changed = JSON.stringify(nextState) !== JSON.stringify(current.state);
+    if (!changed) {
+      return current;
+    }
+
+    const now = Date.now();
+    return {
+      ...current,
+      state: nextState,
+      updatedAt: now,
       ...statusFields(game, nextState),
     };
   });

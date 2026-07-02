@@ -28,7 +28,7 @@ export interface GameSummary {
 //   - `S` must be plain JSON (it round-trips through Firebase).
 //   - `applyMove` and `getStatus` must be PURE and deterministic; they run on
 //     both clients and inside a Firebase transaction.
-export interface Game<S = unknown, M = unknown> {
+export interface Game<S = unknown, M = unknown, P = unknown> {
   readonly id: string;
   readonly name: string;
 
@@ -44,6 +44,15 @@ export interface Game<S = unknown, M = unknown> {
 
   // Pure reducer: return the next state after `seat` plays `move`.
   applyMove(state: S, move: M, seat: Seat): S;
+
+  // Optional setup commit hook used by games that have a pregame setup phase
+  // (for example, Battleship ship placement).
+  commitSetup?(state: S, seat: Seat, setupPayload: P): S | null;
+
+  // Optional setup state helpers for UI messaging/controls.
+  isInSetup?(state: S): boolean;
+  isPlayerReady?(state: S, seat: Seat): boolean;
+  createSetupPayload?(seat: Seat): P;
 
   getStatus(state: S): GameStatus;
 

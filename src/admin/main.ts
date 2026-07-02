@@ -24,6 +24,8 @@ const roomListEl = document.getElementById("room-list") as HTMLUListElement;
 
 const deleting = new Set<string>();
 let latestRows: Array<[string, RoomRow]> = [];
+let firstRoomsSnapshotReceived = false;
+let roomsWatchdog: number | null = null;
 
 function setNotice(msg: string): void {
     noticeEl.textContent = msg;
@@ -61,10 +63,14 @@ function formatStatus(status: PersistedStatus | undefined): string {
 function moveSummary(room: RoomRow): string {
     const game = getGame(room.game ?? null);
     if (game) {
-        const summary = game.getGameSummary(room.state);
-        const total = typeof summary.movesTotal === "number" ? `/${summary.movesTotal}` : "";
-        const base = `moves: ${summary.movesMade}${total}`;
-        return summary.gameProgress ? `${base} | ${summary.gameProgress}` : base;
+        try {
+            const summary = game.getGameSummary(room.state);
+            const total = typeof summary.movesTotal === "number" ? `/${summary.movesTotal}` : "";
+            const base = `moves: ${summary.movesMade}${total}`;
+            return summary.gameProgress ? `${base} | ${summary.gameProgress}` : base;
+        } catch {
+            return "moves: unknown";
+        }
     }
 
     const moveCount = typeof room.moveCount === "number" ? room.moveCount : 0;
@@ -78,14 +84,18 @@ function seatLabel(room: RoomRow, seat: Seat): string {
 function statusSummary(room: RoomRow): string {
     const game = getGame(room.game ?? null);
     if (game) {
-        const status = game.getStatus(room.state);
-        if (status.kind === "in_progress") {
-            return `In progress (turn: ${seatLabel(room, status.turn)})`;
+        try {
+            const status = game.getStatus(room.state);
+            if (status.kind === "in_progress") {
+                return `In progress (turn: ${seatLabel(room, status.turn)})`;
+            }
+            if (status.kind === "draw") {
+                return "Draw";
+            }
+            return `Finished (winner: ${seatLabel(room, status.winner)})`;
+        } catch {
+            return "Unknown";
         }
-        if (status.kind === "draw") {
-            return "Draw";
-        }
-        return `Finished (winner: ${seatLabel(room, status.winner)})`;
     }
 
     const fallbackStatus = formatStatus(room.status);
@@ -212,12 +222,40 @@ function start(): void {
         return;
     }
 
+    setNotice("Connecting to rooms…");
+    roomsWatchdog = window.setTimeout(() => {
+        if (!firstRoomsSnapshotReceived) {
+            setNotice("No room update received yet. Check Firebase connection/rules.");
+        }
+    }, 5000);
+
     const roomsRef = ref(db, "rooms");
-    onValue(roomsRef, (snap) => {
-        const data = (snap.val() ?? {}) as Record<string, RoomRow>;
-        const rows = Object.entries(data).sort(([a], [b]) => a.localeCompare(b));
-        renderRooms(rows);
-    });
+    onValue(
+        roomsRef,
+        (snap) => {
+            try {
+                firstRoomsSnapshotReceived = true;
+                if (roomsWatchdog !== null) {
+                    window.clearTimeout(roomsWatchdog);
+                    roomsWatchdog = null;
+                }
+
+                const data = (snap.val() ?? {}) as Record<string, RoomRow>;
+                const rows = Object.entries(data).sort(([a], [b]) => a.localeCompare(b));
+                renderRooms(rows);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                setNotice(`Room list processing failed: ${message}`);
+            }
+        },
+        (error) => {
+            if (roomsWatchdog !== null) {
+                window.clearTimeout(roomsWatchdog);
+                roomsWatchdog = null;
+            }
+            setNotice(`Failed to load rooms: ${error.message}`);
+        },
+    );
 
     setInterval(() => {
         if (latestRows.length === 0) {

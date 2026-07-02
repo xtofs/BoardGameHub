@@ -10,7 +10,6 @@ import {
 
 const BG_COLOR = "#0b1020";
 const BOARD_COLOR = "#173b7a";
-const GRID_LINE = "#234f9b";
 const WATER = "#0f172a";
 const SHIP = "#94a3b8";
 const MISS = "#93c5fd";
@@ -33,10 +32,13 @@ function asGrid(value: unknown): number[] {
 }
 
 function normalizeState(state: BsgState): BsgState {
-  const raw = state as unknown as unknown[];
-  const g0 = asGrid(raw?.[0]);
-  const g1 = asGrid(raw?.[1]);
-  return [g0, g1];
+  const raw = state as unknown as { boards?: unknown[]; phase?: unknown; ready?: unknown[] };
+  const g0 = asGrid(raw?.boards?.[0]);
+  const g1 = asGrid(raw?.boards?.[1]);
+  const phase = raw?.phase === "setup" ? "setup" : "battle";
+  const ready0 = Boolean(raw?.ready?.[0]);
+  const ready1 = Boolean(raw?.ready?.[1]);
+  return { phase, boards: [g0, g1], ready: [ready0, ready1] };
 }
 
 function metrics(view: View) {
@@ -95,20 +97,26 @@ function drawBoard(
       const tried = (v & CELL_TRIED) !== 0;
       const ship = (v & CELL_SHIP) !== 0;
 
-      const x = rect.x + col * rect.cellSize;
-      const y = rect.y + row * rect.cellSize;
-      const cx = x + rect.cellSize / 2;
-      const cy = y + rect.cellSize / 2;
-      const pad = Math.max(1, Math.floor(rect.cellSize * 0.08));
+      const left = Math.round(rect.x + col * rect.cellSize);
+      const right = Math.round(rect.x + (col + 1) * rect.cellSize);
+      const top = Math.round(rect.y + row * rect.cellSize);
+      const bottom = Math.round(rect.y + (row + 1) * rect.cellSize);
+      const cellW = Math.max(1, right - left);
+      const cellH = Math.max(1, bottom - top);
+      const cx = left + cellW / 2;
+      const cy = top + cellH / 2;
+      const inset = 1;
+      const innerW = Math.max(1, cellW - inset * 2);
+      const innerH = Math.max(1, cellH - inset * 2);
 
-      // Base water square in every cell.
+      // Base water square in every cell, inset to leave a consistent grid gap.
       ctx.fillStyle = WATER;
-      ctx.fillRect(x + pad, y + pad, rect.cellSize - pad * 2, rect.cellSize - pad * 2);
+      ctx.fillRect(left + inset, top + inset, innerW, innerH);
 
       // Own ships are visible as a light square, including when hit.
       if (ship && showShips) {
         ctx.fillStyle = SHIP;
-        ctx.fillRect(x + pad, y + pad, rect.cellSize - pad * 2, rect.cellSize - pad * 2);
+        ctx.fillRect(left + inset, top + inset, innerW, innerH);
       }
 
       // Only visible own ships get the "square with hole" marker.
@@ -129,22 +137,6 @@ function drawBoard(
     }
   }
 
-  ctx.strokeStyle = GRID_LINE;
-  ctx.lineWidth = 0.5;
-  for (let row = 0; row <= ROWS; row++) {
-    const y = rect.y + row * rect.cellSize;
-    ctx.beginPath();
-    ctx.moveTo(rect.x, y);
-    ctx.lineTo(rect.x + rect.w, y);
-    ctx.stroke();
-  }
-  for (let col = 0; col <= COLS; col++) {
-    const x = rect.x + col * rect.cellSize;
-    ctx.beginPath();
-    ctx.moveTo(x, rect.y);
-    ctx.lineTo(x, rect.y + rect.h);
-    ctx.stroke();
-  }
 }
 
 export function render(
@@ -169,8 +161,8 @@ export function render(
   drawLabel(ctx, leftLabel, m.leftX + m.boardW / 2, m.boardY - 6);
   drawLabel(ctx, rightLabel, m.rightX + m.boardW / 2, m.boardY - 6);
 
-  drawBoard(ctx, normalized[0], leftRect, seat === 0);
-  drawBoard(ctx, normalized[1], rightRect, seat === 1);
+  drawBoard(ctx, normalized.boards[0], leftRect, seat === 0);
+  drawBoard(ctx, normalized.boards[1], rightRect, seat === 1);
 }
 
 // Map a canvas click to a move on the opponent board, or null if outside.
