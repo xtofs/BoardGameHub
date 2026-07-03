@@ -84,7 +84,7 @@ function drawBoard(
   rect: { x: number; y: number; w: number; h: number; cellSize: number },
   showShips: boolean,
 ): void {
-  const markerRadius = rect.cellSize * 0.2;
+  const markerRadius = rect.cellSize * 0.35
 
   ctx.fillStyle = BOARD_COLOR;
   roundRect(ctx, rect.x, rect.y, rect.w, rect.h, rect.cellSize * 0.12);

@@ -48,17 +48,16 @@ function roomSeatsMeta(room: RoomRow): string {
 }
 
 function formatStatus(status: PersistedStatus | undefined): string {
-    if (status === "in_progress") {
-        return "In progress";
-    }
-    if (status === "win") {
-        return "Finished";
-    }
-    if (status === "draw") {
-        return "Draw";
-    }
-    return "Unknown";
+    const map = {
+        in_progress: "In Progress",
+        win: "Finished",
+        draw: "Draw",
+        default: "Unknown",
+    } as const;
+
+    return map[status ?? "default"];
 }
+
 
 function moveSummary(room: RoomRow): string {
     const game = getGame(room.game ?? null);

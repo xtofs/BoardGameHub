@@ -534,8 +534,13 @@ canvas.addEventListener("click", (e) => {
   if (status.kind !== "in_progress" || status.turn !== mySeat) return;
 
   const move = game!.hitTest(latest.state, x, y, view, mySeat);
-  if (move === null) return;
-  void submitMove(room, game!, mySeat, move);
+  if (move !== null) {
+    void submitMove(room, game!, mySeat, move);
+  }
+  // Repaint even when no move resulted: some games (e.g. Amazons) track an
+  // in-progress, unsynced click selection locally and need the highlight
+  // to appear immediately.
+  paint();
 });
 
 canvas.addEventListener("mousemove", (e) => {

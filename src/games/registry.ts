@@ -2,6 +2,7 @@ import type { Game } from "./types";
 import { connectFour } from "./connect-four";
 import { battleshipGame } from "./battleship";
 import { triangleChessGame } from "./triangle-chess";
+import { amazonsGame } from "./amazons";
 
 // The single place that knows about every game. The lobby lists these, and the
 // game page resolves `?game=<id>` against this map.
@@ -11,6 +12,7 @@ export const games: Record<string, Game> = {
   [connectFour.id]: connectFour,
   [battleshipGame.id]: battleshipGame,
   [triangleChessGame.id]: triangleChessGame,
+  [amazonsGame.id]: amazonsGame,
 };
 
 export function getGame(id: string | null): Game | undefined {
